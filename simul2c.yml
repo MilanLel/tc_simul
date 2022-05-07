@@ -1,0 +1,55 @@
+# Set time-stamp variables 
+--- 
+- name: Create date and timestamp 
+  hosts: localhost 
+
+  pre_tasks: 
+# Code for start and end time  
+
+   - name: Get start and stop time 
+
+     set_fact: 
+       stop_time: "2022-05-07 08:08:08" 
+       start_time: "2022-05-06 08:08:08" 
+       zero_time: "1970-01-01 00:00:00" 
+
+   - name: Get start and stop time variables 
+
+     set_fact: 
+
+       start_time_days: "{{ ((start_time | to_datetime) - (zero_time | to_datetime('%Y-%m-%d %H:%M:%S'))).days }}" 
+       stop_time_days: "{{ ((stop_time | to_datetime) - (zero_time | to_datetime('%Y-%m-%d %H:%M:%S'))).days }}" 
+
+   - name: Iteration list 
+     debug: msg="Iteration {{ item }}" 
+     with_sequence: start={{ ( start_time_days ) }} end={{ stop_time_days }} stride=1 
+
+   - name: Timestamp - start time and date 
+     debug: 
+       msg: "start_time_days={{ ( start_time_days ) }} stop_time_days={{ stop_time_days }} divljak={{ '%Y-%m-%d' | strftime(0) }}" 
+    
+   - set_fact: 
+       v_file_list: "{{ v_file_list | default([]) + [ ( '/var/log/sa/sa' + ( '%d' | strftime(86400 * item | int))) ] }}" 
+
+     with_sequence: start={{ ( start_time_days ) }} end={{ stop_time_days }} stride=1 
+
+   - debug: 
+       msg: "v_file_list={{ v_file_list }}" 
+
+       # Remove old file 
+
+   - name : remove old file 
+     shell: "rm -f ~/tc_simul/tmp/SAT_CPU.csv" 
+
+# Get files and Shell command sadf  
+
+   - name: Get files
+     set_fact:  
+       v_sa_files: "{{ v_file_list }}" 
+       register: v_sa_files 
+
+   - name: Create csv file 
+     shell: sadf -d {{ item }} -- | sed '/^#/ d' | sed '1d' | sed 's/;/,/g' >> ~/tc_simul/tmp/SAT_CPU.csv 
+     loop: "{{ v_sa_files }}"  
+
+ 
