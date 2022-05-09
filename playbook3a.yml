@@ -1,0 +1,54 @@
+---
+- hosts: all
+  become: true
+  pre_tasks:
+
+  - name: install updates
+    tags: always
+    yum:
+      update_only: yes
+      update_cache: yes
+
+# New section for specific servers - runner 
+
+- hosts: runner
+  become: true
+  tasks:
+
+  - name: install apache and php packages
+    tags: apache,centos,httpd
+    yum:
+      name: 
+        - httpd
+        - php
+      state: latest
+
+# New section for specific servers - welo 
+
+- hosts: welo
+  become: true
+  tasks:
+
+  - name: install apache and php packages
+    tags: apache,centos,httpd 
+    yum:
+      name: 
+        - httpd
+        - php
+      state: latest
+
+# Create new play for welo servers
+  - name: copy default html file for site
+    tags: apache,centos,httpd
+# Modul to use is copy file to servers
+    copy:
+      src: default_site.html
+      dest: /var/www/html/index.html
+      owner: root
+      group: root
+      mode: 0644
+
+       
+
+
+ 
