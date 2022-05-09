@@ -1,0 +1,83 @@
+---
+- hosts: all
+  become: true
+  pre_tasks:
+
+  - name: install updates
+    tags: always
+    yum:
+      update_only: yes
+      update_cache: yes
+
+
+  - name: add sudoers file for tcuser
+    tags: always
+    copy: 
+      src: sudoer_tcuser
+      dest: /etc/sudoers.d/tcuser
+      owner: root
+      group: root
+      mode: 0440
+
+
+# New section for specific servers - runner 
+
+- hosts: runner
+  become: true
+  tasks:
+
+  - name: install apache and php packages
+    tags: apache,centos,httpd
+    yum:
+      name: 
+        - httpd
+        - php
+      state: latest
+
+# To start httpd - just like systemctl start httpd 
+  - name: start httpd
+    tags: apache,centos,httpd
+    service: 
+      name: httpd
+      state: started
+      enabled: yes
+
+# New section for specific servers - welo 
+
+- hosts: welo
+  become: true
+  tasks:
+
+  - name: install apache and php packages
+    tags: apache,centos,httpd 
+    yum:
+      name: 
+        - httpd
+        - php
+      state: latest
+
+# To start httpd - just like systemctl start httpd 
+  - name: start httpd
+    tags: apache,centos,httpd
+    service: 
+      name: httpd
+      state: started
+      enabled: yes
+    
+
+
+# Create new play for welo servers
+  - name: copy default html file for site
+    tags: apache,centos,httpd
+# Modul to use is copy file to servers
+    copy:
+      src: default_site.html
+      dest: /var/www/html/index.html
+      owner: root
+      group: root
+      mode: 0644
+
+       
+
+
+ 
