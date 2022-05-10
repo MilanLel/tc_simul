@@ -1,7 +1,7 @@
 # Set time-stamp variables 
 --- 
 - name: Create date and timestamp 
-  hosts: welo03 
+  hosts: localhost 
 
   pre_tasks: 
 # Code for start and end time  
@@ -40,7 +40,6 @@
        day_sar_path: sa
        register: day_sar_path
 
-
 # continue on dir path to add sa file plus number for days
 
    - set_fact: 
@@ -54,7 +53,7 @@
        # Remove old file 
 
    - name : remove old file 
-     shell: "rm -f ~/tmp/SAT_CPU.csv" 
+     shell: "rm -f ~/tc_simul/reports/SAT_CPU.csv" 
 
 # Get files and Shell command sadf  
 
@@ -64,13 +63,6 @@
        register: v_sa_files 
 
    - name: Create csv file 
-     shell: sadf -d {{ item }} -- | sed '/^#/ d' | sed '1d' | sed 's/;/,/g' >> ~/tmp/SAT_CPU.csv 
+     shell: sadf -d {{ item }} -- | sed '/^#/ d' | sed '1d' | sed 's/;/,/g' >> ~/tc_simul/reports/SAT_CPU.csv 
      loop: "{{ v_sa_files }}"  
 
-# Fetch files from welo03 server 
-   
-   - name: fetch SAT_CPU.csv files
-     fetch:
-       src: /home/tcuser/tmp/SAT_CPU.csv
-       dest: fetched/prefix-{{ inventory_hostname }}
-       flat: yes
