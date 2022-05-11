@@ -1,0 +1,5 @@
+#!/bin/bash
+#this is comment
+date
+who
+ls -F /

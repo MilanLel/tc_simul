@@ -1,0 +1,1 @@
+Sum= 95.07 Records= 87 Mean= 1.09276 STDev= 2.10282

@@ -50,10 +50,11 @@
    - debug: 
        msg: "v_file_list={{ v_file_list }}" 
 
+
        # Remove old file 
 
    - name : remove old file 
-     shell: "rm -f ~/tc_simul/reports/SAT_CPU.csv" 
+     shell: "rm -f ~/tc_simul/reports/STAT_CPU.csv" 
 
 # Get files and Shell command sadf  
 
@@ -63,6 +64,17 @@
        register: v_sa_files 
 
    - name: Create csv file 
-     shell: sadf -d {{ item }} -- | sed '/^#/ d' | sed '1d' | sed 's/;/,/g' >> ~/tc_simul/reports/SAT_CPU.csv 
+     shell: sadf -d {{ item }} -- | sed '/^#/ d' | sed '1d' | sed 's/;/,/g' >> ~/tc_simul/reports/STAT_CPU.csv 
      loop: "{{ v_sa_files }}"  
+
+# Combine 2 csv files - Header + concatenated data
+   - name : Add two csv files
+     shell: cat HEADER_STAT_CPU.csv > combined1a.csv && tail -n+3 ~/tc_simul/reports/STAT_CPU.csv >> combined1a.csv
+
+# use awk to create Stats in file stats.txt
+# awk -F "," 'BEGIN { s=0;n=0; } NR>1 { s=s+$5;n++; k=k+$5*5 } 
+# END{print "Sum=",s, "Records=",n, "Mean=",s/n, "STDev=",sqrt((k-s)/(n-1)) > stats.txt}' combined1a.csv 
+
+   - name : Create stats file 
+     shell: awk -F "," 'BEGIN { s=0;n=0; } NR>1 { s=s+$5;n++; k=k+$5*5 } END{print "Sum=",s, "Records=",n, "Mean=",s/n, "STDev=",sqrt((k-s)/(n-1)) > "stats.txt"}' combined1a.csv 
 
