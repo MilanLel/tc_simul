@@ -71,10 +71,19 @@
    - name : Add two csv files
      shell: cat HEADER_STAT_CPU.csv > combined1a.csv && tail -n+3 ~/tc_simul/reports/STAT_CPU.csv >> combined1a.csv
 
-# use awk to create Stats in file stats.txt
+# use awk to create Stats for column 5 %user in file stats.txt
 # awk -F "," 'BEGIN { s=0;n=0; } NR>1 { s=s+$5;n++; k=k+$5*5 } 
-# END{print "Sum=",s, "Records=",n, "Mean=",s/n, "STDev=",sqrt((k-s)/(n-1)) > stats.txt}' combined1a.csv 
+# END{print "STATS for %user = ", "Sum=",s, "Records=",n, "Mean=",s/n, "STDev=",sqrt((k-s)/(n-1)) > stats.txt}' combined1a.csv 
+#
+# awk '{if($2!=""){count++;sum+=$2};y+=$2^2} END{sq=sqrt(y/NR-(sum/NR)^2);sq=sq?sq:0;print "Mean = "sum/count ORS "S.D = ",sq}'  Input_file
+# stdev = sqrt((1/N)*(sum of (value - mean)^2))
 
    - name : Create stats file 
-     shell: awk -F "," 'BEGIN { s=0;n=0; } NR>1 { s=s+$5;n++; k=k+$5*5 } END{print "Sum=",s, "Records=",n, "Mean=",s/n, "STDev=",sqrt((k-s)/(n-1)) > "stats.txt"}' combined1a.csv 
+     shell: awk -F "," 'BEGIN { sum=0;n=0; } NR>1 { sum=sum+$5;n++; k=k+$5^2 } END{sq=sqrt(k/NR-(sum/NR)^2);sq=sq?sq:0;print "STATS for %user:", "Sum=",sum, "Records=",n, "Mean=",sum/n, "STDev=",sq > "stats.txt"}' ~/tc_simul/reports/STAT_CPU.csv 
+# append stats file 
+   - name : Append min and max to stats file 
+     shell: awk -F "," '{if(min==""){min=max=$5}; if($5>max) {max=$5}; if($5<min) {min=$5}} END{print "STATS for %user:", "Max value=",max, "Min value=",min >> "stats.txt"}' ~/tc_simul/reports/STAT_CPU.csv
+ 
+
+
 
