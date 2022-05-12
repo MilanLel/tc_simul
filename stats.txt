@@ -1,2 +1,2 @@
-STATS for %user: Sum= 96.34 Records= 87 Mean= 1.10736 STDev= 3.74216
-STATS for %user: Max value= 23.83 Min value= 0.12
+STATS for %user: Sum= 255.91 Records= 161 Mean= 1.5895 STDev= 6.69003
+STATS for %user: Max value= 60.71 Min value= 0.08

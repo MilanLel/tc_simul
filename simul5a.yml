@@ -72,7 +72,7 @@
         rm -f ~/tc_simul/reports/Temp_STAT_CPU.csv 
      loop: "{{ v_sa_files }}"  
 
-# Combine 2 csv files - Header + concatenated data
+# Combine 2 csv files - Dynamic Header + concatenated data
    - name : Add two csv files
      shell: |
       #cat HEADER_STAT_CPU.csv > combined1a.csv && tail -n+3 ~/tc_simul/reports/STAT_CPU.csv >> combined1a.csv
@@ -82,10 +82,10 @@
 # use awk to create Stats for column 5 %user in file stats.txt
 
    - name : Create stats file 
-     shell: awk -F ";" 'BEGIN { sum=0;n=0; } NR>1 { sum=sum+$5;n++; k=k+$5^2 } END{stdv=sqrt((k-(sum/n)^2)/(n-1));print "STATS for %user:", "Sum=",sum, "Records=",n, "Mean=",sum/n, "STDev=",stdv > "stats.txt"}' ~/tc_simul/reports/STAT_CPU.csv 
+     shell: awk -F ";" 'BEGIN { sum=0;n=0; } NR>1 { sum=sum+$5;n++; k=k+$5^2 } END{stdv=sqrt((k-(sum/n)^2)/(n-1));print "STATS for %user:", "Sum=",sum, "Records=",n, "Mean=",sum/n, "STDev=",stdv > "reports/stats.txt"}' ~/tc_simul/reports/STAT_CPU.csv 
 # append stats file 
    - name : Append min and max to stats file 
-     shell: awk -F ";" ' NR > 1 {if(min==""){min=max=$5}; if($5>max) {max=$5}; if($5<min) {min=$5}} END{print "STATS for %user:", "Max value=",max, "Min value=",min >> "stats.txt"}' ~/tc_simul/reports/STAT_CPU.csv
+     shell: awk -F ";" ' NR > 1 {if(min==""){min=max=$5}; if($5>max) {max=$5}; if($5<min) {min=$5}} END{print "STATS for %user:", "Max value=",max, "Min value=",min >> "reports/stats.txt"}' ~/tc_simul/reports/STAT_CPU.csv
  
 
 
