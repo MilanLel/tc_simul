@@ -1,0 +1,54 @@
+# Set time-stamp variables 
+--- 
+- name: Create date and timestamp 
+  hosts: localhost
+  gather_facts: false 
+
+  pre_tasks: 
+# Code for start and end time  
+
+   - name: Get start and stop time 
+     set_fact: 
+       stop_time: "2022-05-11 22:21:33" 
+       start_time: "2022-05-09 08:08:08"  
+       zero_time: "1970-01-01 00:00:00" 
+       time_offset: -7200
+
+   - name: Get start and stop time variables 
+
+     set_fact: 
+
+       start_time_days: "{{ ((start_time | to_datetime) - (zero_time | to_datetime('%Y-%m-%d %H:%M:%S'))).days }}" 
+       stop_time_days: "{{ ((stop_time | to_datetime) - (zero_time | to_datetime('%Y-%m-%d %H:%M:%S'))).days }}" 
+
+   - name: Iteration list 
+     debug: msg="Iteration {{ item }}" 
+     with_sequence: start={{ ( start_time_days ) }} end={{ stop_time_days }} stride=1 
+
+   - name: Timestamp - start time and date 
+     debug: 
+       msg: "start_time_days={{ ( start_time_days ) }} stop_time_days={{ stop_time_days }} divljak={{ '%Y-%m-%d 00:00:00' | strftime(0) }}" 
+
+#Get variables for start_sec and Stop_sec
+
+   - name: Get start_sec and stop_sec time variables 
+     set_fact: 
+       start_sec: "{{ (((start_time | to_datetime) - (zero_time | to_datetime('%Y-%m-%d %H:%M:%S'))).total_seconds() + time_offset ) }}" 
+       stop_sec: "{{ (((stop_time | to_datetime) - (zero_time | to_datetime('%Y-%m-%d %H:%M:%S'))).total_seconds() + time_offset ) }}" 
+
+   - debug: msg="start_sec={{ ( start_sec ) }} stop_sec={{ stop_sec }} }}" 
+
+
+# Define time stamps for stop and start time in sec since the Epoch - inserted part
+
+
+   - name: timestamp start_sec
+     shell: echo "{{ start_time }}" | awk '{ split($0,a,/(-| |:)/); print mktime(sprintf("%04d %02d %02d %02d %02d %02d",a[1],a[2],a[3],a[4],a[5],a[6])) }' 
+     register: v_mk_start_sec
+
+   - name: timestamp stop_sec
+     shell: echo "{{ stop_time }}" | awk '{ split($0,a,/(-| |:)/); print mktime(sprintf("%04d %02d %02d %02d %02d %02d",a[1],a[2],a[3],a[4],a[5],a[6])) }' 
+     register: v_mk_stop_sec
+
+  #- debug: msg="  Local time v_date={{ v_date.stdout }} " #v_date_epoch={{ v_date_epoch.stdout }}  ans_epoch={{ start_sec }}   v_mk_start_sec={{ v_mk_start_sec }}"
+   - debug: msg=" ans_start={{ start_sec }} ans_stop={{ stop_sec }} v_mk_start_sec={{ v_mk_start_sec.stdout }} v_mk_stop_sec={{ v_mk_stop_sec.stdout }}" 
