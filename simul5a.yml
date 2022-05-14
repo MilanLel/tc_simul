@@ -9,10 +9,10 @@
    - name: Get start and stop time 
 
      set_fact: 
-       stop_time: "2022-05-07 08:08:08" 
-       start_time: "2022-05-06 08:08:08" 
+       stop_time: "2022-05-11 22:21:33" 
+       start_time: "2022-05-09 08:08:08" 
        zero_time: "1970-01-01 00:00:00" 
-
+ 
    - name: Get start and stop time variables 
 
      set_fact: 
@@ -79,13 +79,27 @@
       cat ~/tc_simul/reports/HEADER_STAT_CPU.csv ~/tc_simul/reports/STAT_CPU.csv > ~/tc_simul/reports/Temp_STAT_CPU.csv
       mv ~/tc_simul/reports/Temp_STAT_CPU.csv ~/tc_simul/reports/STAT_CPU.csv
 
-# use awk to create Stats for column 5 %user in file stats.txt
+# use gnuplot to create diagram for column 7 %System vs timestamp 
+# GNU plot - set file
+
+   - name: Generate data.csv for GNU plot 
+     shell: awk 'BEGIN{ FS=";"; OFS=";"}( $2 != "" && NR>2 ){printf( "%s;%.1f\n", $3,$7);}' reports/STAT_CPU.csv > data.csv 
+
+# GNU plot - set the plot layout
+
+   - name: Generate GNU plot 
+     shell: gnuplot -e 'datacsv="data.csv"; datapng="Stat-cpu.png"; Cons_title="%System vs timestamp"; Cons_Ylabel="%System"; ' cons.gp 
+#  
+# use awk to create Stats for column 7 %System in file slot_stats.txt
+
+
+# use awk to create Stats for column 7 %System in file stats.txt
 
    - name : Create stats file 
-     shell: awk -F ";" 'BEGIN { sum=0;n=0; } NR>1 { sum=sum+$5;n++; k=k+$5^2 } END{stdv=sqrt((k-(sum/n)^2)/(n-1));print "STATS for %user:", "Sum=",sum, "Records=",n, "Mean=",sum/n, "STDev=",stdv > "reports/stats.txt"}' ~/tc_simul/reports/STAT_CPU.csv 
+     shell: awk -F ";" 'BEGIN { sum=0;n=0; } NR>1 { sum=sum+$7;n++; k=k+$7^2 } END{stdv=sqrt((k-(sum/n)^2)/(n-1));print "STATS for %System:", "Sum=",sum, "Records=",n, "Mean=",sum/n, "STDev=",stdv > "reports/stats.txt"}' ~/tc_simul/reports/STAT_CPU.csv 
 # append stats file 
    - name : Append min and max to stats file 
-     shell: awk -F ";" ' NR > 1 {if(min==""){min=max=$5}; if($5>max) {max=$5}; if($5<min) {min=$5}} END{print "STATS for %user:", "Max value=",max, "Min value=",min >> "reports/stats.txt"}' ~/tc_simul/reports/STAT_CPU.csv
+     shell: awk -F ";" ' NR > 1 {if(min==""){min=max=$7}; if($7>max) {max=$7}; if($7<min) {min=$7}} END{print "STATS for %System:", "Max value=",max, "Min value=",min >> "reports/stats.txt"}' ~/tc_simul/reports/STAT_CPU.csv
  
 
 

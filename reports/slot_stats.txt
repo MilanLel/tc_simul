@@ -1,0 +1,2 @@
+STATS for %System: Sum= 12.17 Records= 20 Mean= 0.6085 STDev= 0.729298
+STATS for %System: Max value= 1.52 Min value= 0.18

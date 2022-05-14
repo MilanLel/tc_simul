@@ -70,5 +70,13 @@
 # GNU plot - set the plot layout
 
    - name: Generate GNU plot 
-     shell: gnuplot -e 'datacsv="data.csv"; datapng="cons-mem-used-kb-vgbp39vr.png"; Cons_title="%System vs timestamp"; Cons_Ylabel="%System"; ' cons.gp 
-#    
+     shell: gnuplot -e 'datacsv="data.csv"; datapng="Slot-stat-cpu.png"; set autoscale y; Cons_title="%System vs timestamp"; Cons_Ylabel="%System"; ' cons.gp 
+#  
+# use awk to create Stats for column 7 %System in file slot_stats.txt
+
+   - name : Create stats file 
+     shell: awk -F ";" 'BEGIN { sum=0;n=0; } NR>1 { sum=sum+$7;n++; k=k+$7^2 } END{stdv=sqrt((k-(sum/n)^2)/(n-1));print "STATS for %System:", "Sum=",sum, "Records=",n, "Mean=",sum/n, "STDev=",stdv > "reports/slot_stats.txt"}' ~/tc_simul/reports/STAT_SLOT_CPU.csv 
+# append stats file 
+   - name : Append min and max to stats file 
+     shell: awk -F ";" ' NR > 1 {if(min==""){min=max=$7}; if($7>max) {max=$7}; if($7<min) {min=$7}} END{print "STATS for %System:", "Max value=",max, "Min value=",min >> "reports/slot_stats.txt"}' ~/tc_simul/reports/STAT_SLOT_CPU.csv
+ 
