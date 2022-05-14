@@ -1,0 +1,158 @@
+# Set time-stamp variables 
+--- 
+- name: Create date and timestamp 
+  hosts: localhost 
+
+  pre_tasks: 
+# Code for start and end time  
+
+   - name: Get start and stop time 
+
+     set_fact: 
+       stop_time: "2022-05-11 22:21:33" 
+       start_time: "2022-05-09 08:08:08" 
+       zero_time: "1970-01-01 00:00:00" 
+ 
+   - name: Get start and stop time variables 
+
+     set_fact: 
+
+       start_time_days: "{{ ((start_time | to_datetime) - (zero_time | to_datetime('%Y-%m-%d %H:%M:%S'))).days }}" 
+       stop_time_days: "{{ ((stop_time | to_datetime) - (zero_time | to_datetime('%Y-%m-%d %H:%M:%S'))).days }}" 
+
+   - name: Iteration list 
+     debug: msg="Iteration {{ item }}" 
+     with_sequence: start={{ ( start_time_days ) }} end={{ stop_time_days }} stride=1 
+
+   - name: Timestamp - start time and date 
+     debug: 
+       msg: "start_time_days={{ ( start_time_days ) }} stop_time_days={{ stop_time_days }} }}" 
+
+# Define dir path as variable - inserted part
+
+   - name: define dir path as month variable
+     set_fact: 
+       mon_sar_path: /var/log/sa/
+       register: mon_sar_path
+
+   - name: define dir path as day variable
+     set_fact: 
+       day_sar_path: sa
+       register: day_sar_path
+
+# continue on dir path to add sa file plus number for days
+
+   - set_fact: 
+       v_file_list: "{{ v_file_list | default([]) + [ ( mon_sar_path + day_sar_path + ( '%d' | strftime(86400 * item | int))) ] }}" 
+
+     with_sequence: start={{ ( start_time_days ) }} end={{ stop_time_days }} stride=1 
+
+   - debug: 
+       msg: "v_file_list={{ v_file_list }}" 
+
+
+       # Remove old file 
+
+   - name : remove old file 
+     shell: "rm -f ~/tc_simul/reports/STAT_CPU.csv" 
+
+# Get files and Shell command sadf  
+
+   - name: Get files
+     set_fact:  
+       v_sa_files: "{{ v_file_list }}" 
+       register: v_sa_files 
+
+   - name: Create csv file 
+     shell: |
+       #sadf -d {{ item }} -- | sed '/^#/ d' | sed '1d' | sed 's/;/,/g' >> ~/tc_simul/reports/STAT_CPU.csv 
+        sadf -d {{ item }} > ~/tc_simul/reports/Temp_STAT_CPU.csv
+        grep "^#" ~/tc_simul/reports/Temp_STAT_CPU.csv | head -1  > ~/tc_simul/reports/HEADER_STAT_CPU.csv
+        cat  ~/tc_simul/reports/Temp_STAT_CPU.csv | grep -v "^#" | egrep -v "(STARTED|RESTART)"  >> ~/tc_simul/reports/STAT_CPU.csv
+        rm -f ~/tc_simul/reports/Temp_STAT_CPU.csv 
+     loop: "{{ v_sa_files }}"  
+
+# Combine 2 csv files - Dynamic Header + concatenated data
+   - name : Add two csv files
+     shell: |
+      #cat HEADER_STAT_CPU.csv > combined1a.csv && tail -n+3 ~/tc_simul/reports/STAT_CPU.csv >> combined1a.csv
+      cat ~/tc_simul/reports/HEADER_STAT_CPU.csv ~/tc_simul/reports/STAT_CPU.csv > ~/tc_simul/reports/Temp_STAT_CPU.csv
+      mv ~/tc_simul/reports/Temp_STAT_CPU.csv ~/tc_simul/reports/STAT_CPU.csv
+
+# use gnuplot to create diagram for column 7 %System vs timestamp 
+# GNU plot - set file
+
+   - name: Generate data.csv for GNU plot 
+     shell: awk 'BEGIN{ FS=";"; OFS=";"}( $2 != "" && NR>2 ){printf( "%s;%.1f\n", $3,$7);}' reports/STAT_CPU.csv > data.csv 
+
+# GNU plot - set the plot layout
+
+   - name: Generate GNU plot 
+     shell: gnuplot -e 'datacsv="data.csv"; datapng="Stat-cpu.png"; Cons_title="%System vs timestamp"; Cons_Ylabel="%System"; ' cons.gp 
+#  
+# use awk to create Stats for column 7 %System in file slot_stats.txt
+
+
+# use awk to create Stats for column 7 %System in file stats.txt
+
+   - name : Create stats file 
+     shell: awk -F ";" 'BEGIN { sum=0;n=0; } NR>1 { sum=sum+$7;n++; k=k+$7^2 } END{stdv=sqrt((k-(sum/n)^2)/(n-1));print "STATS for %System:", "Sum=",sum, "Records=",n, "Mean=",sum/n, "STDev=",stdv > "reports/stats.txt"}' ~/tc_simul/reports/STAT_CPU.csv 
+# append stats file 
+   - name : Append min and max to stats file 
+     shell: awk -F ";" ' NR > 1 {if(min==""){min=max=$7}; if($7>max) {max=$7}; if($7<min) {min=$7}} END{print "STATS for %System:", "Max value=",max, "Min value=",min >> "reports/stats.txt"}' ~/tc_simul/reports/STAT_CPU.csv
+ 
+#Get variables for start_sec and Stop_sec to get time slot
+   
+   - name: Get start and stop time 
+     set_fact: 
+       slot_start_sec: "2022-05-10 19:00:00"
+       slot_stop_sec: "2022-05-11 10:00:00"   
+       time_offset: -7200
+
+
+   - name: Get start_sec and stop_sec time variables 
+     set_fact: 
+       start_sec: "{{ (((slot_start_sec | to_datetime) - (zero_time | to_datetime('%Y-%m-%d %H:%M:%S'))).total_seconds() + time_offset ) |int }}" 
+       stop_sec: "{{ (((slot_stop_sec | to_datetime) - (zero_time | to_datetime('%Y-%m-%d %H:%M:%S'))).total_seconds() + time_offset ) |int }}" 
+
+   - debug: msg="slot_start_sec={{ ( start_sec ) }} slot_stop_sec={{ stop_sec }}" 
+
+
+# Define time stamps for stop and start time in sec since the Epoch - inserted part
+   - name: Iteration list 
+     debug: msg="Iteration {{ item }}" 
+     with_sequence: start={{ ( start_sec ) }} end={{ stop_sec }} stride=600
+
+   - set_fact: 
+       var1: "{{ var1 | default([])+[ (item ) ] }}" 
+     with_sequence: start={{ ( start_sec ) }} end={{ stop_sec }} stride=600 
+   
+#   - debug: msg="var1={{ ( var1 ) }}" 
+
+   - name: Temp file without header and time in sec
+     shell: cat  ~/tc_simul/reports/STAT_CPU.csv | awk -F ";" -v start={{ start_sec }} -v stop={{ stop_sec }} ' NR >1 { split($3,a,/(-| |:)/); ts=mktime(sprintf("%04d %02d %02d %02d %02d %02d",a[1],a[2],a[3],a[4],a[5],a[6])) ; if( start < ts && ts < stop ){ print $0; } }' > ~/tc_simul/reports/STAT_SLOT_CPU.csv
+     register: mk_sec
+
+   - debug: msg="mk_sec={{ mk_sec.stdout }}"
+
+# GNU plot - set file
+
+   - name: Generate data.csv for GNU plot 
+     shell: awk 'BEGIN{ FS=";"; OFS=";"}( $2 != "" && NR>2 ){printf( "%s;%.1f\n", $3,$7);}' reports/STAT_SLOT_CPU.csv > data.csv 
+
+# GNU plot - set the plot layout
+
+   - name: Generate GNU plot 
+     shell: gnuplot -e 'datacsv="data.csv"; datapng="Slot-stat-cpu.png"; set autoscale y; Cons_title="%System vs timestamp"; Cons_Ylabel="%System"; ' cons.gp 
+#  
+# use awk to create Stats for column 7 %System in file slot_stats.txt
+
+   - name : Create stats file 
+     shell: awk -F ";" 'BEGIN { sum=0;n=0; } NR>1 { sum=sum+$7;n++; k=k+$7^2 } END{stdv=sqrt((k-(sum/n)^2)/(n-1));print "STATS for %System:", "Sum=",sum, "Records=",n, "Mean=",sum/n, "STDev=",stdv > "reports/slot_stats.txt"}' ~/tc_simul/reports/STAT_SLOT_CPU.csv 
+# append stats file 
+   - name : Append min and max to stats file 
+     shell: awk -F ";" ' NR > 1 {if(min==""){min=max=$7}; if($7>max) {max=$7}; if($7<min) {min=$7}} END{print "STATS for %System:", "Max value=",max, "Min value=",min >> "reports/slot_stats.txt"}' ~/tc_simul/reports/STAT_SLOT_CPU.csv
+ 
+
+
+
